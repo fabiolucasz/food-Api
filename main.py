@@ -94,3 +94,15 @@ async def update_product(id: int, produto: ProdutoSchema, db: Session = Depends(
     db.refresh(produto_existente)
     return produto_existente
 
+
+# Rota para deletar um produto pelo ID
+@app.delete("/admin/produtos/{id}/")
+def deletar_produto(id: int, db: Session = Depends(get_db)):
+    produto = db.query(Produto).filter(Produto.id == id).first()
+    if not produto:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+
+    db.delete(produto)
+    db.commit()
+    return {"message": f"Produto com ID {id} foi deletado com sucesso"}
+
