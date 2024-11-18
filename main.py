@@ -87,25 +87,16 @@ def listar_produtos_por_categoria(categoria: str, db: Session = Depends(get_db))
         raise HTTPException(status_code=404, detail="Nenhum produto encontrado para essa categoria")
     return jsonable_encoder(produtos)  # Retorna a lista de produtos em JSON
 
-# Rota para criar ou atualizar um produto
-@app.put("/admin/produtos/", response_model=ProdutoSchemaInput)
-async def upsert_product(produto: ProdutoSchemaInput, db: Session = Depends(get_db)):
-    produto_existente = db.query(Produto).filter(Produto.nome == produto.nome).first()
-
-    if produto_existente:
-        # Atualiza o produto existente
-        for key, value in produto.dict().items():
-            setattr(produto_existente, key, value)
+@app.put("/admin/produtos/{id}/")
+async def update_product(id: int, produto: ProdutoSchemaInput, db: Session = Depends(get_db)):
+    produto_existente = db.query(Produto).filter(Produto.id == id).first()
+    if not produto_existente:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    for key, value in produto.dict().items():
+        setattr(produto_existente, key, value)
         db.commit()
         db.refresh(produto_existente)
-        return jsonable_encoder(produto_existente)  # Retorna o produto atualizado em JSON
-    else:
-        # Cria um novo produto
-        novo_produto = Produto(**produto.dict())
-        db.add(novo_produto)
-        db.commit()
-        db.refresh(novo_produto)
-        return jsonable_encoder(novo_produto)  # Retorna o novo produto em JSON
+        return produto_existente
 
 # Rota para deletar um produto pelo ID
 @app.delete("/admin/produtos/{id}/")
